@@ -24,11 +24,26 @@ col_names = []
 long_flag_list = []
 lat_flag_list = []
 
+long_flag2_list = []
+lat_flag2_list = []
+
 long_upper_range = 180 
 long_lower_range = -180 
 
 lat_upper_range = 90
 lat_lower_range = -90
+
+geo_empty_count = 0
+geo_zero_count = 0
+
+NY_long_range = [-80, -70]
+NY_lat_range = [40,45]
+
+vendorID_dist_dic = {}
+ratecode_dist_dic = {}
+storeandfwdflag_dist_dic = {}
+passcount_dist_dic = {}
+
 
 # main loop 
 for row in reader:
@@ -63,10 +78,63 @@ for row in reader:
         #print(max_geo_latitude, "\n", min_geo_latitude, "\n", max_geo_longitude, "\n", min_geo_longitude)
         #print("type of geo data is: ", type(min_geo_longitude), type(min_geo_latitude), type(max_geo_latitude), type(max_geo_longitude))
         
+        # intilizing for passenger count, trip time, trip distance, to be used in max/min calculations below
+        max_pass_count = int(row[7])
+        min_pass_count = int(row[7])
        
+        max_trip_time = int(row[8])
+        min_trip_time = int(row[8])
+       
+        max_trip_dist = float(row[9])
+        min_trip_dist = float(row[9])
         
     # processing on any and all non-header data fields (row 1-end)
     if n > 0:   
+        
+        # min/max values for row[7], row[8], row[9], passenge count, trip time, trip distance, respectively
+        
+        if max_pass_count < int(row[7]):
+            max_pass_count = int(row[7])
+        if min_pass_count > int(row[7]):
+            min_pass_count = int(row[7])
+            
+        if max_trip_time < int(row[8]):
+            max_trip_time = int(row[8])
+        if min_trip_time > int(row[8]):
+            min_trip_time = int(row[8])
+            
+        if max_trip_dist < float(row[9]):
+            max_trip_dist = float(row[9])
+        if min_trip_dist > float(row[9]):
+            min_trip_dist = float(row[9])
+        
+        
+        
+        # collecting and processing unique fields
+        
+        # Distinct value collection for vendor ID, row[2]
+        if row[2] not in vendorID_dist_dic.keys():
+            vendorID_dist_dic[row[2]] = 1 
+        else: 
+            vendorID_dist_dic[row[2]] += 1
+
+        # Distinct value collection for rate code, row[3]
+        if row[3] not in ratecode_dist_dic.keys():
+            ratecode_dist_dic[row[3]] = 1 
+        else: 
+            ratecode_dist_dic[row[3]] += 1
+            
+        # Distinct value collection for store and fwd flag, row[4]
+        if row[4] not in storeandfwdflag_dist_dic.keys():
+            storeandfwdflag_dist_dic[row[4]] = 1 
+        else: 
+            storeandfwdflag_dist_dic[row[4]] += 1
+            
+        # Distinct value collection for passenger count, row[7]
+        if row[7] not in passcount_dist_dic.keys():
+            passcount_dist_dic[row[7]] = 1 
+        else: 
+            passcount_dist_dic[row[7]] += 1
         
         if n < 6:
             # appending to the sample-collection dataframe 'df' with each row of data looked at for the first 5 rows 
@@ -75,6 +143,7 @@ for row in reader:
         
         #print(row[10], row[12])
         #print(row[11], row[13])
+        
         
         # compare and replace values for min_pickupdts and max_dropoffdts to derive at the min and max date values
         if row[5] < min_pickupdts:
@@ -110,6 +179,11 @@ for row in reader:
         ##    print("test works!")
             
         # for pickup longitude field
+        if pickuplong == "0":
+            geo_zero_count += 1
+        if pickuplong == "":
+            geo_empty_count += 1 
+            
         if pickuplong != "0" and pickuplong != "":
             """
             if float(pickuplong) > float(long_upper_range):
@@ -126,13 +200,21 @@ for row in reader:
                 ##print("n is: ", n)
                 ##long_range_flag += 1 
                 long_flag_list.append(pickuplong)
+            elif (float(pickuplong) > float(NY_long_range[1])) or (float(pickuplong) < float(NY_long_range[0])):
+                long_flag2_list.append(pickuplong)
             else:  
                 if float(pickuplong) > max_geo_longitude:
                     max_geo_longitude = float(pickuplong)
                 if float(pickuplong) < min_geo_longitude:
                     min_geo_longitude = float(pickuplong) 
                 
-        # for drop-off longitude field           
+        # for drop-off longitude field          
+
+        if dropofflong == "0":
+            geo_zero_count += 1
+        if dropofflong == "":
+            geo_empty_count += 1    
+            
         if dropofflong != "0" and dropofflong != "":  
             """
             if float(dropofflong) > float(long_upper_range):
@@ -150,6 +232,8 @@ for row in reader:
                 ##print("n is: ", n)
                 ##long_range_flag += 1 
                 long_flag_list.append(dropofflong)
+            elif (float(dropofflong) > float(NY_long_range[1])) or (float(dropofflong) < float(NY_long_range[0])):
+                long_flag2_list.append(dropofflong)
             else:    
                 if float(dropofflong) > max_geo_longitude:
                     max_geo_longitude = float(dropofflong)
@@ -166,6 +250,10 @@ for row in reader:
         # compare and replace max/min values for Latitude variables 
         
         # for pick up latitude values 
+        if pickuplat == "0":
+            geo_zero_count += 1
+        if pickuplat == "":
+            geo_empty_count += 1
         
         if pickuplat != "0" and pickuplat != "":
             """
@@ -184,15 +272,27 @@ for row in reader:
                 ##print("n is: ", n)
                 ##lat_range_flag += 1 
                 lat_flag_list.append(pickuplat)
+            elif (float(pickuplat) > float(NY_lat_range[1])) or (float(pickuplat) < float(NY_lat_range[0])):
+                lat_flag2_list.append(pickuplat)
             else:
                 if float(pickuplat) > max_geo_latitude:
                     max_geo_latitude = float(pickuplat)
                 if float(pickuplat) < min_geo_latitude:
                     min_geo_latitude = float(pickuplat)
+        
+            
+         
+                    
+                    
+                    
             
          
         # for drop off latitude values
-        
+        if dropofflat == "0":
+            geo_zero_count += 1
+        if dropofflat == "":
+            geo_empty_count += 1
+            
         if dropofflat != "0" and dropofflat != "":    
             """
             if float(dropofflat) > float(lat_upper_range):
@@ -210,6 +310,8 @@ for row in reader:
                 ##print("n is: ", n)
                 ##lat_range_flag += 1 
                 lat_flag_list.append(dropofflat)
+            elif (float(dropofflat) > float(NY_lat_range[1])) or (float(dropofflat) < float(NY_lat_range[0])):
+                lat_flag2_list.append(dropofflat)
             else:
                 if float(dropofflat) < min_geo_latitude:
                     min_geo_latitude = float(dropofflat)
@@ -231,8 +333,8 @@ for row in reader:
         
         
     # truncate processing on data to specified row number
-    ##if n == 100000: 
-    ##    break
+    if n == 100: 
+        break
         
         
        # preliminary code for spitting out sample data
@@ -247,14 +349,28 @@ for row in reader:
 
 print("\n")   
 ##print("Number of columns: ", len(col_names))
-##print("Name of fields: ", col_names)
+print("Name of fields: ", col_names)
 ##print("Dates range from %s to %s" % (min_pickupdts, max_dropoffdts))      
 ##print("Number of rows in data:", n)   
 print("CPU processing time for main loop: ", time.time() - start)  
-print("FINAL min long = ", min_geo_longitude, "AND max long = ", max_geo_longitude)
-print("FINAL min lat = ", min_geo_latitude, "AND max lat = ", max_geo_latitude) 
-print("long range flag: ", len(long_flag_list))
-print("lat range flag: ", len(lat_flag_list))
-print("Long flag list = ", long_flag_list)
-print("Lat flag list = ", lat_flag_list)
+#print("FINAL longitude range: [%s:%s]" % (min_geo_longitude,max_geo_longitude))
+#print("FINAL latitude range: [%s:%s]" % (min_geo_latitude,max_geo_latitude))
+#print("long range flag:", len(long_flag_list), "- percentage of data: %s%%" % ((len(long_flag_list)/n)*100))
+#print("lat range flag:", len(lat_flag_list), "- percentage of data: %s%%" % ((len(lat_flag_list)/n)*100))
+#print("geo empty string flag:", geo_empty_count, "- percentage of data: %s%%" % ((geo_empty_count/n)*100))
+#print("geo zero flag:", geo_zero_count, "- percentage of data: %s%%" % ((geo_zero_count/n)*100))
+#print("NY lat range flag:", len(lat_flag2_list), "- percentage of data: %s%%" % ((len(lat_flag2_list)/n)*100))
+#print("NY long range flag:", len(long_flag2_list), "- percentage of data: %s%%" % ((len(long_flag2_list)/n)*100))
+print("distinct vendor IDs:", vendorID_dist_dic)
+print("distinct rate codes:", ratecode_dist_dic)
+print("distinct store and fwd flags:", storeandfwdflag_dist_dic)
+print("distinct passenger count:", passcount_dist_dic)
+##print("NY long range flag list = ", long_flag2_list)
+##print("NY lat range flag list = ", lat_flag2_list)
 
+##print("Long flag list = ", long_flag_list)
+##print("Lat flag list = ", lat_flag_list)
+
+print("passenger count range: [%s:%s]" % (min_pass_count,max_pass_count))
+print("trip time range: [%s:%s]" % (min_trip_time,max_trip_time))
+print("trip dist range: [%s:%s]" % (min_trip_dist,max_trip_dist))
