@@ -231,4 +231,99 @@ Looking over the sample data from *Question 3* above, as well as looking at the 
 14. *dropoff_latitude*: decimal(2,6)
 
 
-## Question 5
+## Question 5: Geographic Range of Data 
+
+To get an idea of the geographic range of the data, we look to the geo-location fields, namely
+
+*pickup_longitude
+*pickup_latitude 
+*dropoff_longitude 
+*dropoff_latitude 
+
+Processing these fields to see the range of values produced interesting results. The results were categorized in four different ways: 
+
+1. value out of range with logical latitude/longitude range 
+2. value out of New York state range 
+3. value empty or " " 
+4. value *legitimate*
+
+Any value not in category 4, categorized as a *legitimate* value for the dataset, was unaccounted for in the geographical location range analysis. 
+
+For the code, first we want to intialize the range of acceptable values: 
+
+```python
+long_upper_range = 180 
+long_lower_range = -180 
+
+lat_upper_range = 90
+lat_lower_range = -90
+
+NY_long_range = [-80, -70]
+NY_lat_range = [40,45]
+```
+
+Next, we intialize the max/min values for longitude/latitude as the first encountered values in the first row of data within the main loop: 
+
+```python
+if n == 1: 
+        max_geo_longitude = float(row[10])
+        min_geo_longitude = float(row[10])
+        max_geo_latitude = float(row[11])
+        min_geo_latitude = float(row[11])
+```
+
+Next, for each four geolocation variables in each row of data, we set-up a rather identical code chunk to process the comparing and replacing of max/min values for that variable. To reduce redundancy, I will show the code used for the one of variables above, namely *pickup longitude*, which will be identical for the remaining 3 variables, other than using the different associated variables: 
+
+```python 
+pickuplong = row[10]
+
+if pickuplong == "":
+    geo_empty_count += 1 
+            
+if pickuplong != "":            
+    if (float(pickuplong) > float(long_upper_range)) or (float(pickuplong) < float(long_lower_range)): 
+        long_flag_list.append(pickuplong)
+    elif (float(pickuplong) > float(NY_long_range[1])) or (float(pickuplong) < float(NY_long_range[0])):
+        long_flag2_list.append(pickuplong)
+    else:  
+        if float(pickuplong) > max_geo_longitude:
+            max_geo_longitude = float(pickuplong)
+        if float(pickuplong) < min_geo_longitude:
+            min_geo_longitude = float(pickuplong) 
+            
+```
+To further explain the above code, the code chunk above does several things: 
+1. test if *pickuplong* is less than minimum longitude value or more than maximum longitude value, and replaces that value accordingly if need be
+2. flag and add to a list of flags for 1) geo-location values outside of logical range and 2) geo-location values out of NYC state range 
+3. flag and add to count if an empty string is encountered 
+
+The same code chunk above is done for the reminaing three varibles in the same manner, namely:
+1. pickuplat
+2. dropofflong
+3. dropofflat 
+
+
+Once the main loop is run, we can now print the values and see the geolocation range, as well as looking at how many flags and invalid values we encountered: 
+```python
+print("FINAL longitude range: [%s:%s]" % (min_geo_longitude,max_geo_longitude))
+print("FINAL latitude range: [%s:%s]" % (min_geo_latitude,max_geo_latitude))
+print("\n") 
+print("long range flag:", len(long_flag_list), "- percentage of data: %s%%" % ((len(long_flag_list)/n)*100))
+print("lat range flag:", len(lat_flag_list), "- percentage of data: %s%%" % ((len(lat_flag_list)/n)*100))
+print("geo empty string flag:", geo_empty_count, "- percentage of data: %s%%" % ((geo_empty_count/n)*100))
+print("NY lat range flag:", len(lat_flag2_list), "- percentage of data: %s%%" % ((len(lat_flag2_list)/n)*100))
+print("NY long range flag:", len(long_flag2_list), "- percentage of data: %s%%" % ((len(long_flag2_list)/n)*100))
+```
+
+Which give us the following output: 
+> FINAL longitude range: [-80.0:-70.050003]
+FINAL latitude range: [40.0:44.985409]
+
+
+long range flag: 70 - percentage of data: 0.00046356176089630064%
+lat range flag: 111 - percentage of data: 0.0007350765065641338%
+geo empty string flag: 292 - percentage of data: 0.0019337147740245684%
+geo zero flag: 1023704 - percentage of data: 6.779286126808379%
+NY lat range flag: 1786 - percentage of data: 0.011827447213725613%
+NY long range flag: 1689 - percentage of data: 0.01118508305934074%
+
