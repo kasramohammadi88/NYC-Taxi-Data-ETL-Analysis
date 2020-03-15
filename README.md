@@ -317,13 +317,24 @@ print("NY long range flag:", len(long_flag2_list), "- percentage of data: %s%%" 
 
 Which give us the following output: 
 > FINAL longitude range: [-80.0:-70.050003]
-FINAL latitude range: [40.0:44.985409]
+
+> FINAL latitude range: [40.0:44.985409]
+
+> long range flag: 70 - percentage of data: 0.00046356176089630064%
+
+> lat range flag: 111 - percentage of data: 0.0007350765065641338%
+
+> geo empty string flag: 292 - percentage of data: 0.0019337147740245684%
+
+> NY lat range flag: 1786 - percentage of data: 0.011827447213725613%
+
+> NY long range flag: 1689 - percentage of data: 0.01118508305934074%
 
 
-long range flag: 70 - percentage of data: 0.00046356176089630064%
-lat range flag: 111 - percentage of data: 0.0007350765065641338%
-geo empty string flag: 292 - percentage of data: 0.0019337147740245684%
-geo zero flag: 1023704 - percentage of data: 6.779286126808379%
-NY lat range flag: 1786 - percentage of data: 0.011827447213725613%
-NY long range flag: 1689 - percentage of data: 0.01118508305934074%
+Now we got an idea of the range of the data, namely the longitude and latitude range above. We also get a sense of how much of data was invalid. For example, around 2% of the data was out-of-range with respect to New York state boundaries.
 
+*note: Though the longitude and latitude range of the data above is collected accurately, because geolocation is based on the **combination** of latitude **and** longitude points, despite the range being accurate and within New York state boundaries, it is possible still that some points counted can be technically out-of-range.*
+
+A rough image of the geolocation range as detailed above, but as depicated on a map: 
+
+![map](images/map.png)
