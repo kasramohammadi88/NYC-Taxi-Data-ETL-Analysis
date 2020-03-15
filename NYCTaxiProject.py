@@ -1,21 +1,29 @@
 import csv
 import time
 import pandas as pd 
+import matplotlib.pyplot as plt
 
 start = time.time()
 
 # open NYC Taxi data file 
-fn = 'D:/Files/Engineering/Clarkson University - Data Analytics\
-/IA626 - Big Data Processing & Cloud Services/NYC Taxi Project/trip_data_4.csv'
+fn = 'C:/Users/Evariste/Documents/GitHub/NYCTaxiProject/subset_every_thousand_row.csv'
+##fn = 'D:/Files/Engineering/Clarkson University - Data Analytics\
+##/IA626 - Big Data Processing & Cloud Services/NYC Taxi Project/trip_data_4.csv'
 f = open(fn,"r")
 
 # assign constructor object for csv reader object, so proper comma separated format is accounted for during 
 # loop processing
 reader = csv.reader(f)
-
-
+"""
+f2 = open('subset_every_thousand_row.csv','w')
+f2.write("")
+f2.close()   
+f2 = open('subset_every_thousand_row.csv','a')
+writer = csv.writer(f2, delimiter=',',lineterminator='\n')
+"""
 # intializing row count variable 'n'
 n = 0
+
 # intialize start time to measure CPU time to process main loop
 start = time.time()
 # intialization of list of names of column headers
@@ -45,28 +53,54 @@ storeandfwdflag_dist_dic = {}
 passcount_dist_dic = {}
 
 
+passenger_count_per_hour = {}
+
+bar_chart_test = {1:1, 2:12, 3:51}
+
+    
+    
+
+
 # main loop 
 for row in reader:
-    #print("n is now: ", n)
+    """ 
     
+    PROCESSING ON ALL ROWS, HEADER + DATA 
+    
+    """
+    
+    # write every thousanth row to subset_every_thousand_row.csv file using csv.writer function
+    ##if n % 1000 == 0:
+    ##    writer.writerow(row)
     
     
     col_numbers = len(row)
     
-    # processing on header row
+    """
+
+    PROCESSING ON HEADER ROW ONLY 
+    
+    """
+    
     if n == 0: 
         # collect name of headers in list variable 'col_names'
         col_names = row
         
         # Dataframe 'df' created to collect sample data in 
         df = pd.DataFrame(columns = col_names)
-        
+       
      
-    # processing on first row of data
+    """
+    
+    PROCESSING ON FIRST ROW OF DATA 
+    
+    """
     if n == 1:    
         # intializing the earliest pick-up time variable and the latest drop-off time variable 
         min_pickupdts = row[5]
         max_dropoffdts = row[6]
+        
+        
         # intializing max-min values for geo-locational fields; abitrarily intializing to first pickup longitude
         # and latitude observation
         max_geo_longitude = float(row[10])
@@ -88,10 +122,45 @@ for row in reader:
         max_trip_dist = float(row[9])
         min_trip_dist = float(row[9])
         
-    # processing on any and all non-header data fields (row 1-end)
+    
+    """
+    
+    PROCESSING ON ANY AND ALL DATA ROWS (ROW 1 - END)
+    
+    """
     if n > 0:   
         
-        # min/max values for row[7], row[8], row[9], passenge count, trip time, trip distance, respectively
+        
+        
+        # split to seperate date and time portion of dts field
+        dts_split_pickup = row[5].split(" ")
+        dts_split_dropoff = row[6].split(" ")
+        
+        
+        # isolate the two digit hour of the day variable 
+        hour_pickup = dts_split_pickup[1].split(":")[0] 
+        hour_dropoff = dts_split_dropoff[1].split(":")[0]
+        
+     
+            # count up passengers within each hour of the day in dictionary 
+        if hour_dropoff not in passenger_count_per_hour.keys():
+            passenger_count_per_hour[hour_dropoff] = int(row[7])
+        else:
+            passenger_count_per_hour[hour_dropoff] += int(row[7])
+        
+        if hour_pickup != hour_dropoff:
+            if hour_pickup not in passenger_count_per_hour.keys():
+                passenger_count_per_hour[hour_pickup] = int(row[7])
+            else:
+                passenger_count_per_hour[hour_pickup] += int(row[7])
+      
+                
+        
+        
+        ##print(passenger_count_per_dayhour)
+        
+        # min/max value calculation for row[7], row[8], row[9], passenger count, trip time,
+        # trip distance, respectively
         
         if max_pass_count < int(row[7]):
             max_pass_count = int(row[7])
@@ -107,6 +176,20 @@ for row in reader:
             max_trip_dist = float(row[9])
         if min_trip_dist > float(row[9]):
             min_trip_dist = float(row[9])
+            
+        # calculating average number of passengers per hour in the data 
+        
+        
+        
+       
+       
+        
+        
+            
+        
+        
+        ## how to append to a list that is a value of a key of a dictionary 
+        ##passenger_count_per_hour[0].append(2)
         
         
         
@@ -136,21 +219,20 @@ for row in reader:
         else: 
             passcount_dist_dic[row[7]] += 1
         
-        if n < 6:
+        ##if n < 6:
             # appending to the sample-collection dataframe 'df' with each row of data looked at for the first 5 rows 
             # of data
-            df.loc[len(df)] = row
+        ##    df.loc[len(df)] = row
         
         #print(row[10], row[12])
         #print(row[11], row[13])
-        
         
         # compare and replace values for min_pickupdts and max_dropoffdts to derive at the min and max date values
         if row[5] < min_pickupdts:
             min_pickupdts = row[5] 
         if row[6] > max_dropoffdts:
             max_dropoffdts = row[6]         
-            
+        
         # assign variables to geo-locational data points for use in min/max processesing down below  
         pickuplong = row[10]
         pickuplat = row[11]
@@ -185,16 +267,7 @@ for row in reader:
             geo_empty_count += 1 
             
         if pickuplong != "0" and pickuplong != "":
-            """
-            if float(pickuplong) > float(long_upper_range):
-                print("pick up Too high")
-                print("pickuplong =", pickuplong)
-                print("n is: ",n)
-            if float(pickuplong) < float(long_lower_range):
-                print("pick up Too low")
-                print("pickuplong =", pickuplong)
-                print("n is: ",n)
-            """
+            
             if (float(pickuplong) > float(long_upper_range)) or (float(pickuplong) < float(long_lower_range)): 
                 ##print("Second IF statement worked for Pick Up LONG")
                 ##print("n is: ", n)
@@ -216,17 +289,7 @@ for row in reader:
             geo_empty_count += 1    
             
         if dropofflong != "0" and dropofflong != "":  
-            """
-            if float(dropofflong) > float(long_upper_range):
-                print("drop off Too high")
-                print("dropofflong =", dropofflong)
-                print("n is: ",n)
-                
-            if float(dropofflong) < float(long_lower_range):
-                print("drop off Too low")
-                print("dropofflong=", dropofflong)
-                print("n is: ",n)
-            """
+            
             if (float(dropofflong) > float(long_upper_range)) or (float(dropofflong) < float(long_lower_range)): 
                 ##print("Second IF statement worked for Drop Off LONG")
                 ##print("n is: ", n)
@@ -256,16 +319,7 @@ for row in reader:
             geo_empty_count += 1
         
         if pickuplat != "0" and pickuplat != "":
-            """
-            if float(pickuplat) > float(lat_upper_range):
-                print("pick up Too high")
-                print("pickuplat=", pickuplat)
-                print("n is: ",n)
-            if float(pickuplat) < float(lat_lower_range):
-                print("pick up Too low")
-                print("pickuplat =", pickuplat)
-                print("n is: ",n)
-            """
+            
             
             if (float(pickuplat) > float(lat_upper_range)) or (float(pickuplat) < float(lat_lower_range)): 
                 ##print("Second IF statement worked for Pick Up LAT")
@@ -294,16 +348,7 @@ for row in reader:
             geo_empty_count += 1
             
         if dropofflat != "0" and dropofflat != "":    
-            """
-            if float(dropofflat) > float(lat_upper_range):
-                print("drop off Too high")
-                print("dropofflat=", dropofflat)
-                print("n is: ",n)
-            if float(dropofflat) < float(lat_lower_range):
-                print("drop off Too low")
-                print("dropofflat =", dropofflat)
-                print("n is: ",n)
-            """
+            
             
             if (float(dropofflat) > float(lat_upper_range)) or (float(dropofflat) < float(lat_lower_range)): 
                 ##print("Second IF statement worked for Drop Off LAT")
@@ -330,11 +375,11 @@ for row in reader:
     ##if n == 10:
     ##    for col in col_names:
     ##        print(df[col])
-        
+          
         
     # truncate processing on data to specified row number
-    if n == 100: 
-        break
+    ##if n == 10: 
+    ##   break
         
         
        # preliminary code for spitting out sample data
@@ -345,12 +390,44 @@ for row in reader:
             
     n += 1
     
+# loop to create average passengers per hour 
+
+passenger_average_per_hour = {}
+
+for hour in passenger_count_per_hour:
+    if int(hour) == 1 or int(hour) == 0:
+        ##print("00 or 01 recognized!")
+        passenger_average_per_hour[int(hour)] = passenger_count_per_hour[hour] / 31
+    else: 
+        ##print("NOT 00 or 01 recognized!")
+        passenger_average_per_hour[int(hour)] = passenger_count_per_hour[hour] / 30
+        
+        
+#print(passenger_average_per_hour)
+
+sorted_pass_avg_per_hour = {}
+        
+for key in sorted(passenger_average_per_hour.keys()):
+    sorted_pass_avg_per_hour[key] = passenger_average_per_hour[key]
+
+print(sorted_pass_avg_per_hour)
+
+plt.bar(range(len(sorted_pass_avg_per_hour)), list(sorted_pass_avg_per_hour.values()), align='center')
+plt.xticks(range(len(sorted_pass_avg_per_hour)), list(sorted_pass_avg_per_hour.keys()))
+# # for python 2.x:
+# plt.bar(range(len(D)), D.values(), align='center')  # python 2.x
+# plt.xticks(range(len(D)), D.keys())  # in python 2.x
+
+plt.show()
+    
+
+
 
 
 print("\n")   
 ##print("Number of columns: ", len(col_names))
-print("Name of fields: ", col_names)
-##print("Dates range from %s to %s" % (min_pickupdts, max_dropoffdts))      
+#print("Name of fields: ", col_names)
+print("Dates range from %s to %s" % (min_pickupdts, max_dropoffdts))      
 ##print("Number of rows in data:", n)   
 print("CPU processing time for main loop: ", time.time() - start)  
 #print("FINAL longitude range: [%s:%s]" % (min_geo_longitude,max_geo_longitude))
@@ -361,16 +438,19 @@ print("CPU processing time for main loop: ", time.time() - start)
 #print("geo zero flag:", geo_zero_count, "- percentage of data: %s%%" % ((geo_zero_count/n)*100))
 #print("NY lat range flag:", len(lat_flag2_list), "- percentage of data: %s%%" % ((len(lat_flag2_list)/n)*100))
 #print("NY long range flag:", len(long_flag2_list), "- percentage of data: %s%%" % ((len(long_flag2_list)/n)*100))
-print("distinct vendor IDs:", vendorID_dist_dic)
-print("distinct rate codes:", ratecode_dist_dic)
-print("distinct store and fwd flags:", storeandfwdflag_dist_dic)
-print("distinct passenger count:", passcount_dist_dic)
+#print("distinct vendor IDs:", vendorID_dist_dic)
+#print("distinct rate codes:", ratecode_dist_dic)
+#print("distinct store and fwd flags:", storeandfwdflag_dist_dic)
+#print("distinct passenger count:", passcount_dist_dic)
 ##print("NY long range flag list = ", long_flag2_list)
 ##print("NY lat range flag list = ", lat_flag2_list)
 
 ##print("Long flag list = ", long_flag_list)
 ##print("Lat flag list = ", lat_flag_list)
 
-print("passenger count range: [%s:%s]" % (min_pass_count,max_pass_count))
-print("trip time range: [%s:%s]" % (min_trip_time,max_trip_time))
-print("trip dist range: [%s:%s]" % (min_trip_dist,max_trip_dist))
+#print("passenger count range: [%s:%s]" % (min_pass_count,max_pass_count))
+#print("trip time range: [%s:%s]" % (min_trip_time,max_trip_time))
+#print("trip dist range: [%s:%s]" % (min_trip_dist,max_trip_dist))
+
+
+##print("passenger_count_per_hour = ", passenger_count_per_hour)
