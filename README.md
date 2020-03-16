@@ -337,7 +337,7 @@ Now we got an idea of the range of the data, namely the longitude and latitude r
 
 A rough image of the geolocation range as detailed above, but as depicated on a map: 
 
-![Image description](NYCTaxiProject/images/map.png)
+![Image description](images/map.png)
 
 ## Question 6: Distinct Values 
 
@@ -517,7 +517,7 @@ plt.show()
 
 The plot then shows the following trend of average passengers per hour in the data: 
 
-![Image description](NYCTaxiProject/images/map.png)
+![Average Passengers per hour - All of Data](images/chart.png)
 
 
 ## Question 9: Subset CSV file for every thousandth row 
@@ -561,7 +561,7 @@ f = open(file_used,"r")
 
 Next, we simply run the same code process done in *Question 8* as done before, however with the above changes made to the code and the toggle-feature applied in the code. This gives us the following passenger average plot for the subset data: 
 
-![Image description](NYCTaxiProject/images/map.png)
+![Average Passengers per hour - Subset Dataset](images/chart2.png)
 
 
 Comparing the two charts from the whole of the data and the subset dataset shows two main things: 
