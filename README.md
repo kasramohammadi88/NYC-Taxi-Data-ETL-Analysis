@@ -337,7 +337,7 @@ Now we got an idea of the range of the data, namely the longitude and latitude r
 
 A rough image of the geolocation range as detailed above, but as depicated on a map: 
 
-![Image description](images/map.png)
+![Geographical Visual Range](images/map.png)
 
 ## Question 6: Distinct Values 
 
