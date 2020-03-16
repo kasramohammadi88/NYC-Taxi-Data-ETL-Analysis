@@ -337,4 +337,234 @@ Now we got an idea of the range of the data, namely the longitude and latitude r
 
 A rough image of the geolocation range as detailed above, but as depicated on a map: 
 
-![map](images/map.png)
+![Image description](NYCTaxiProject/images/map.png)
+
+## Question 6: Distinct Values 
+
+To find out the distinct values of the fields, we create a dictionary for each field. Since some of the fields are continous and others make less sense to compute distinct values of, the following fields were chosen to find distinct values of: 
+
+1. *vendor_id*
+2. *rate_code*
+3. *store_and_fwd_flag*
+4. *passenger_count*
+
+The code do accomplish this within the main loop is as follows: 
+
+```python
+# Distinct value collection for vendor ID, row[2]
+if n > 0: 
+        if row[2] not in vendorID_dist_dic.keys():
+            vendorID_dist_dic[row[2]] = 1 
+        else: 
+            vendorID_dist_dic[row[2]] += 1
+
+        if row[3] not in ratecode_dist_dic.keys():
+            ratecode_dist_dic[row[3]] = 1 
+        else: 
+            ratecode_dist_dic[row[3]] += 1
+
+        if row[4] not in storeandfwdflag_dist_dic.keys():
+            storeandfwdflag_dist_dic[row[4]] = 1 
+        else: 
+            storeandfwdflag_dist_dic[row[4]] += 1
+
+        if row[7] not in passcount_dist_dic.keys():
+            passcount_dist_dic[row[7]] = 1 
+        else: 
+            passcount_dist_dic[row[7]] += 1
+```
+
+and then we print the values out: 
+
+```python 
+print("distinct vendor IDs:", vendorID_dist_dic)
+print("distinct rate codes:", ratecode_dist_dic)
+print("distinct store and fwd flags:", storeandfwdflag_dist_dic)
+print("distinct passenger count:", passcount_dist_dic)
+``` 
+
+With the following results: 
+
+> distinct vendor IDs: {'CMT': 7582525, 'VTS': 7517943}
+
+> distinct rate codes: {'1': 14768828, '2': 254687, '5': 39118, '4': 14566, '3': 21937, '6': 164, '0': 1145, '65': 2, '9': 1, '210': 14, '8': 2, '208': 1, '206': 1, '77': 1, '7': 1}
+
+> distinct store and fwd flags: {'N': 7451841, 'Y': 129970, '': 7518657}
+
+> distinct passenger count: {'1': 10707072, '2': 1985742, '3': 609849, '4': 298146, '5': 890115, '6': 609313, '0': 229, '9': 1, '8': 1}
+
+## Question 7: Max/Min for non-geolocation fields 
+
+For Max/Min values for non-geolocation fields, the following variables was determined most logical to perform the process on: 
+1. *passenger_count*
+2. *trip_time_in_secs*
+3. *trip_distance* 
+
+So, first we initilize the starting max/min values for all fields with the first row of data within the main loop: 
+
+```python 
+if n == 1: 
+        max_pass_count = int(row[7])
+        min_pass_count = int(row[7])
+
+        max_trip_time = int(row[8])
+        min_trip_time = int(row[8])
+
+        max_trip_dist = float(row[9])
+        min_trip_dist = float(row[9])
+        
+```
+
+Then we perform the max/min check and replacement process on all fields: 
+
+```python 
+if n > 0: 
+        if max_pass_count < int(row[7]):
+            max_pass_count = int(row[7])
+        if min_pass_count > int(row[7]):
+            min_pass_count = int(row[7])
+
+        if max_trip_time < int(row[8]):
+            max_trip_time = int(row[8])
+        if min_trip_time > int(row[8]):
+            min_trip_time = int(row[8])
+
+        if max_trip_dist < float(row[9]):
+            max_trip_dist = float(row[9])
+        if min_trip_dist > float(row[9]):
+            min_trip_dist = float(row[9])
+```
+
+printing the results...
+```python
+print("passenger count range: [%s:%s]" % (min_pass_count,max_pass_count))
+print("trip time range: [%s:%s]" % (min_trip_time,max_trip_time))
+print("trip dist range: [%s:%s]" % (min_trip_dist,max_trip_dist))
+```
+
+...we get the following output:
+
+> passenger count range: [0:9]
+
+> trip time range: [0:10800]
+
+> trip dist range: [0.0:100.0]
+
+## Question 8: Average Passenger Per Hour chart 
+
+To create this chart, first we need a way to collect this information. To accomplish this, we can collect a running summation of number of passangers for each hour of the day in a dictionary. The keys of the dictionary will be the hour of the day, e.g. '00' or '05', and the value is the summation of passengers falling within that hour during their trip. Then, we can plot the dictionary using the matplotlib package.
+
+First, want to collecting from the two datetime fields the specific hour(s) of the trip: 
+```python
+
+if n > 0:
+        dts_split_pickup = row[5].split(" ")
+        dts_split_dropoff = row[6].split(" ")
+        
+        hour_pickup = dts_split_pickup[1].split(":")[0] 
+        hour_dropoff = dts_split_dropoff[1].split(":")[0]
+```
+
+Now that we have the hour of the pickup and dropoff time of the row, we write code take the number of passengers and add to the running summation count within our dictionary for the specified hour: 
+```python
+if n > 0: 
+        if hour_dropoff not in passenger_count_per_hour.keys():
+            passenger_count_per_hour[hour_dropoff] = int(row[7])
+        else:
+            passenger_count_per_hour[hour_dropoff] += int(row[7])
+        
+        if hour_pickup != hour_dropoff:
+            if hour_pickup not in passenger_count_per_hour.keys():
+                passenger_count_per_hour[hour_pickup] = int(row[7])
+            else:
+                passenger_count_per_hour[hour_pickup] += int(row[7])
+                
+```
+*note: we make we don't double count the summation if the pickup and dropoff hours are the same* 
+
+Once we collect the summation of the passenger count, now we need to convert that summation into an average. The way we do this is by observating the number of days that contain the specified in our dataset. Looking again at the data range calculated for our dataset, it ranges from: 
+
+> Dates range from 2013-04-01 00:00:00 to 2013-05-01 02:19:25
+
+This means that every hour of the day occurs during 30 days (all of month of April), but the '00' and '01' hours occurs during 31 days, as it occurs on the 1st of May as well as all of the month of April. The hour '02' also occurs during the 1st of May, but since only 19:25 minutes of the hour is accounted for, I decided to not count this extra day for the '02' hour and therefore will consider it also to be occuring for 30 days. 
+
+Therefore, all summation for the hours will be divided by 30, except for hour '00' and '01' which will be divided by 31. We will do this part of the code **outside** of our main loop, as the main loop needs to finish the summation process prior to us calculating the average values.
+
+```python
+passenger_average_per_hour = {}
+
+for hour in passenger_count_per_hour:
+    if int(hour) == 1 or int(hour) == 0:
+        passenger_average_per_hour[int(hour)] = passenger_count_per_hour[hour] / 31
+    else: 
+        passenger_average_per_hour[int(hour)] = passenger_count_per_hour[hour] / 30
+
+sorted_pass_avg_per_hour = {}
+       
+for key in sorted(passenger_average_per_hour.keys()):
+    sorted_pass_avg_per_hour[key] = passenger_average_per_hour[key]
+```
+
+Then, to plot, we can use the matplotlib package and the pyplot function as 'plt' to perform the plotting of the chart
+
+```python
+
+plt.bar(range(len(sorted_pass_avg_per_hour)), list(sorted_pass_avg_per_hour.values()), align='center')
+plt.xticks(range(len(sorted_pass_avg_per_hour)), list(sorted_pass_avg_per_hour.keys()))
+plt.show()
+
+```
+
+The plot then shows the following trend of average passengers per hour in the data: 
+
+![Image description](NYCTaxiProject/images/map.png)
+
+
+## Question 9: Subset CSV file for every thousandth row 
+
+To create this subsetted CSV file, we need to first create a 'writer' constructor as such: 
+
+```python
+write_subset = True
+if write_subset is True: 
+    f2 = open('subset_every_thousand_row.csv','w')
+    f2.write("")
+    f2.close()   
+    f2 = open('subset_every_thousand_row.csv','a')
+    writer = csv.writer(f2, delimiter=',',lineterminator='\n')
+```
+*note: 'write_subset" boolean variable is created to be used to be able to turn on/off the feature of writing to a subset CSV file* 
+
+Next, within the main loop, we use the 'writer' constructor to write to our subset CSV file. 
+
+```python 
+
+if write_subset is True: 
+        if n % 1000 == 0:
+            writer.writerow(row)
+```
+
+## Question 10: Average Passenger Per Hour chart on Subset CSV file 
+
+To perform this process, we simply need to run the same code we ran in *Question 8*, but on the subset CSV file instead. So, we first want to create a new filename variable for the new subset CSV file. I called it 'fn2'. Furthermore, I create a new variable called 'file_used' that will get assigned one of the two data files, either the main one or the subset one. This way, it gives you a quick way to switch between the two as a sort of toggle function within the code. 
+
+```python
+fn = 'D:/Files/Engineering/Clarkson University - Data Analytics\
+/IA626 - Big Data Processing & Cloud Services/NYC Taxi Project/trip_data_4.csv'
+fn2 = 'C:/Users/Evariste/Documents/GitHub/NYCTaxiProject/subset_every_thousand_row.csv'
+
+file_used = fn 
+
+f = open(file_used,"r")
+
+```
+
+Next, we simply run the same code process done in *Question 8* as done before, however with the above changes made to the code and the toggle-feature applied in the code. This gives us the following passenger average plot for the subset data: 
+
+![Image description](NYCTaxiProject/images/map.png)
+
+
+Comparing the two charts from the whole of the data and the subset dataset shows two main things: 
+1. The general distribution of passengers per hour remains virtually the same, with very minimal variation seen. 
+2. Since we are looking at a much smaller set of the data in the second plot, the summation of total passengers is reduced, by roughly a thousdand times
+      
